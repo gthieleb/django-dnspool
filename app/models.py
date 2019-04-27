@@ -2,6 +2,7 @@ from django.db import models
 from mptt.models import MPTTModel, TreeForeignKey
 
 from django.utils.translation import gettext as _
+from django.utils.html import mark_safe
 
 
 # Create your models here.
@@ -182,11 +183,13 @@ class DnsNameVariation(models.Model):
     def __str__(self):
         return self.variation
 
+regex_help_msg = """ A valid named-group regex in python. Verbose expression is allowed. """
 
 class DnsNamePattern(models.Model):
 
     name = models.CharField(max_length=50, verbose_name=_("Name"))
-    regex = models.TextField(verbose_name=_("DNS Entry Name Pattern"))
+    regex = models.TextField(help_text=mark_safe(regex_help_msg),
+                             verbose_name=_("DNS Entry Name Pattern"))
     description = models.TextField(blank=True, verbose_name=_("Description"))
 
     variations = models.ManyToManyField(DnsNameVariation,
