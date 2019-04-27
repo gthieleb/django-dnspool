@@ -193,6 +193,7 @@ class DnsNamePattern(models.Model):
     description = models.TextField(blank=True, verbose_name=_("Description"))
 
     variations = models.ManyToManyField(DnsNameVariation,
+                                        blank=True,
                                         help_text=_("Ordered list of dns name variations"),
                                         verbose_name=_("Dns Name Variations"))
 
