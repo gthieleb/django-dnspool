@@ -4,11 +4,7 @@ from .models import (Subnet,
                      SubnetParent,
                      Middleware,
                      DnsEntry,
-                     DnsPoolEntry,
-                     DnsNameComponentCategory,
-                     DnsNameComponent,
-                     DnsNamePattern,
-                     DnsNameVariation)
+                     DnsPoolEntry)
 
 # Register your models here.
 
@@ -24,7 +20,3 @@ admin.site.register(SubnetParent)
 admin.site.register(Middleware)
 admin.site.register(DnsEntry)
 admin.site.register(DnsPoolEntry)
-admin.site.register(DnsNameComponent, DnsNameComponentAdmin)
-admin.site.register(DnsNameComponentCategory)
-admin.site.register(DnsNamePattern, DnsNamePatternAdmin)
-admin.site.register(DnsNameVariation)

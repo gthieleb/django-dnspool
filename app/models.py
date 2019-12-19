@@ -20,9 +20,9 @@ class Middleware(models.Model):
 
 class SubnetParent(MPTTModel):
     """ this implements
-        all organisation units of the network topology
-        that are possible in the customer environment.
-        Possible units are NetworkZone, PhysicalNetworkZone and DatacenterLocation
+        the possible organisation units of the network topology
+        in the customer environment.
+        Possible units are e.g. DMZ, Physical Zone and DatacenterLocation
         """
     name = models.CharField(max_length=50, verbose_name=_("Name"))
     description = models.TextField(blank=True, verbose_name=_("Description"))
@@ -44,12 +44,12 @@ class Subnet(models.Model):
         """
 
     cidr = models.CharField(max_length=50, verbose_name=_("Name"))
-    parent = TreeForeignKey(SubnetParent, null=True, blank=True, on_delete=models.CASCADE,
+    parent = TreeForeignKey('SubnetParent', null=True, blank=True, on_delete=models.CASCADE,
                             related_name='subnets', db_index=True, verbose_name=_("Subnet-Parent"))
 
 
     admin = models.BooleanField(default=False,
-                    help_text=_("Does policy allow to use this subnet for administrative purpose"),
+                    help_text=_("Does the policy allows to use this subnet for administrative purpose"),
                                 verbose_name=_("Admin Subnet"))
 
     middlewares = models.ManyToManyField(Middleware, blank=True,
@@ -60,6 +60,17 @@ class Subnet(models.Model):
         return self.cidr
 
 
+class DnsPoolEntry(models.Model):
+
+    name = models.CharField(max_length=50, verbose_name=_("Name"))
+
+    class Meta:
+        verbose_name_plural = _("Dns PoolEntries")
+
+    def __str__(self):
+        return self.name
+
+
 class DnsEntry(models.Model):
 
     name = models.CharField(max_length=50, verbose_name=_("Name"))
@@ -67,22 +78,21 @@ class DnsEntry(models.Model):
                                            verbose_name=_("IP-Address"))
     subnet = models.ForeignKey(Subnet, on_delete=models.CASCADE,
                                help_text=_("The subnet this ip address belongs to."),
-                               verbose_name=_("Dns Entry"))
+                               verbose_name=_("Subnet"))
+
+    dnspoolentry = models.ForeignKey(DnsPoolEntry, on_delete=models.CASCADE,
+                                     null=True,
+                                     blank=True,
+                                     related_name="dnsentries",
+                                     verbose_name=_("DNS Pool Entry"),
+                                     help_text=_("The DNS pool this entry belongs to"))
 
     class Meta:
+        verbose_name = _("Dns Entry")
         verbose_name_plural = _("Dns Entries")
 
     def __str__(self):
         return self.name
 
 
-class DnsPoolEntry(models.Model):
 
-    name = models.CharField(max_length=50, verbose_name=_("Name"))
-    entries = models.ManyToManyField(DnsEntry, blank=True, verbose_name=_("Dns-Entries"))
-
-    class Meta:
-        verbose_name_plural = _("Dns PoolEntries")
-
-    def __str__(self):
-        return self.name

@@ -40,7 +40,8 @@ class NamePoolEntry(models.Model):
 
     def save(self):
         """ validate the name against all existing name patterns
-            of a pool type and saves the entry and all its artifacts. """
+            of a pool type and saves the entry together with all of
+            its artifacts. """
 
         from django.core.exceptions import ValidationError
         from .models import NamePattern
@@ -48,7 +49,8 @@ class NamePoolEntry(models.Model):
 
         match = None
 
-        for pattern in NamePattern.objects.find(pool_type=pool_type):
+        patterns = NamePattern.objects.filter(pool_type=pool_type)
+        for pattern in patterns:
 
             c = re.compile(pattern.regex, re.VERBOSE)
             match = c.match(self.name)
@@ -57,8 +59,8 @@ class NamePoolEntry(models.Model):
                 break
 
             if not match:
-                msg = _("The name {0} does not match any of the patterns: {1}".format(self.name,
-                            "\n\n".join(NamePattern.objects.all().values_list('regex', flat=True))))
+                msg = _("The name {0} does not match with any of these patterns: {1}".format(self.name,
+                            "\n\n".join(patterns.values_list('regex', flat=True))))
                 raise ValidationError(msg)
 
 
@@ -68,21 +70,21 @@ class NamePoolEntry(models.Model):
 
         for c,a in data.items():
 
-            criteria, created = NamingArtifactsCriteria.objects.get_or_create(criteria=c)
+            criteria, created = NameArtifactsCategory.objects.get_or_create(criteria=c)
 
             if not a and criteria.default:
-                artifact, created = NamingArtifacts.objects.get_or_create(
+                artifact, created = NameArtifacts.objects.get_or_create(
                     artifact=criteria.default,
                     criteria=c)
             elif a:
-                artifact, created = NamingArtifacts.objects.get_or_create(
+                artifact, created = NameArtifacts.objects.get_or_create(
                     artifact=a,
                     criteria=c)
 
             artifact.dns_pool_entries.add(self)
 
 
-class NamingArtifactsCriteria(models.Model):
+class NameArtifactsCategory(models.Model):
     """ A naming artifact describes a part of a name entry.
         This class defines the criteria of the entry artifact. """
 
@@ -93,11 +95,11 @@ class NamingArtifactsCriteria(models.Model):
         return self.criteria
 
 
-class NamingArtifacts(models.Model):
+class NameArtifacts(models.Model):
     """ A entry artifact describes a part of the entry name.
         This class stores the value of the entry artifact and relates to is parent. """
 
-    criteria = models.ForeignKey(NamingArtifactsCriteria,
+    criteria = models.ForeignKey(NameArtifactsCategory,
                                            on_delete=models.CASCADE,
                                            verbose_name="NameEntry Criteria")
 
@@ -117,22 +119,23 @@ class NamingArtifacts(models.Model):
 class NamingScheme(models.Model):
     """ a naming scheme is extracted of the named group pattern and
         can be used as python format substition to create new variations of the
-        name by following a naming scheme.
+        name by following a naming convention.
         """
 
     scheme = models.CharField(max_length=150,
-        help_text=_("Concat the naming scheme using python format expression e.g ''{type}{farm}foo'"),
+        help_text=_("Concat the naming scheme using python format expression 
+                    e.g ''{foo}{bar}ize'"),
         verbose_name=_("Name Scheme"))
     description = models.TextField(blank=True, verbose_name=_("Description"))
 
 
     def save(self):
         from django.core.exceptions import ValidationError
-        from .models import NamingArtifactsCriteria
+        from .models import NameArtifactsCategory
         import re
 
         valid_subs = list("{{{0}}}".format(c) for c in \
-                        NamingArtifactsCriteria.objects.all().values_list('criteria', flat=True))
+                        NameArtifactsCategory.objects.all().values_list('criteria', flat=True))
 
         wanted_subs = re.findall(r'({\w+})', self.scheme)
 
